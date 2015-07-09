@@ -1,0 +1,1 @@
+AB5,BC4, CD8 , DE6, DC8, AD5,  CE2, EB3, AE7

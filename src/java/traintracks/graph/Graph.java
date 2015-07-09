@@ -40,6 +40,7 @@ public class Graph {
 
 	public Graph addEdge(Node source, Node dest, Integer weight) {
 		dirty = Boolean.TRUE;
+		shortestRoutesCache.clear();
 		
 		if (!allNodes.contains(source)) 
 			allNodes.add(source);
@@ -66,7 +67,15 @@ public class Graph {
 		return computeShortestRoutes(from).get(to);
 	}
 	
-	// Simple A*
+	/**
+	 * Simple A*. Computes shortest paths to all reachable nodes from the source node given.
+	 * This method will cache the result so that if it is called later on the same node and nothing
+	 * has been changed (no nodes added or removed), it will not compute the result again, 
+	 * but will return the cached value.
+	 * 
+	 * @param source
+	 * @return
+	 */
 	public Map<Node, Route> computeShortestRoutes(Node source) {
 		
 		// Don't perform calculation if it's been done before and nothings changed 
@@ -89,7 +98,7 @@ public class Graph {
 			nodes.add(node);
 		}
 		
-		
+		// A*
 		while (!nodes.isEmpty()) {
 			Node node = findMinimum(nodes, weights);
 			
@@ -104,73 +113,70 @@ public class Graph {
 		
 		Map<Node, Route> routeMap = makeRouteMap(source, weights, prevNodes);
 		
+		// Cache result
 		shortestRoutesCache.put(source, routeMap);
+		
 		dirty = Boolean.FALSE;
 		
 		return routeMap;
 	}
 	
 	/**
-	 * Simple DFS. Choosing to do this iteratively. It just makes it easier to keep
-	 * the routesMap data structure rather than pass it along through a bunch 
-	 * of recursive calls.
+	 * Nice public interface which passes through to the method that does the hard work.
 	 * 
-	 * @param from
-	 * @return a map from Node, to a list of all routes that can be taken to that node
+	 * @param source
+	 * @return
 	 */
-	public Map<Node, List<List<Node>>> computeAllRoutes(Node root) {
-		
-		Map<Node, List<List<Node>>> routesMap = new HashMap<Node, List<List<Node>>>();
-		List<Node> visitedNodes = new ArrayList<Node>();
-		Stack<Node> nodesToVisit = new Stack<Node>();
-		Stack<Node> currentPath = new Stack<Node>();
-		nodesToVisit.push(root);
-		Node cursor = root;
-		int timesToBacktrack = 0;
-		
-		while (!nodesToVisit.isEmpty()) {
-			cursor = nodesToVisit.pop();
-			currentPath.push(cursor);
-			
-			if (!cursor.hasBeenVisited()) {
-				timesToBacktrack++;
-				cursor.markVisited();
-				visitedNodes.add(cursor);
-				if (routesMap.get(cursor) == null) {
-					routesMap.put(cursor, new ArrayList<List<Node>>());
-				}
-				routesMap.get(cursor).add(new ArrayList<Node>(currentPath));
-				for (Node neighbor : cursor.getNeighbors()) {
-					nodesToVisit.add(neighbor);
-				}
-			} else { // We're in a cycle				
-				routesMap.get(cursor).add(new ArrayList<Node>(currentPath));
-				for (int i = 0; i < timesToBacktrack; i++) {
-					currentPath.pop();
-				}
-				timesToBacktrack = 0;
-			}
-		}
-		
-		// Make our nodes clean again
-		for (Node node : visitedNodes) {
-			node.markClean();
-		}
-		
-		// Clean up the trivial path (i.e. C -> C)
-		List<Node> trivialRoute = null;
-		for (List<Node> route : routesMap.get(root)) {
-			if (route.size() == 1) {
-				trivialRoute = route;
-			}
-		}
-		
-		routesMap.get(root).remove(trivialRoute);
-		
-		
-		return routesMap;
+	public List<ArrayList<Node>> findPaths(Node source) {
+		return findPaths(source, new ArrayList<ArrayList<Node>>(), new Stack<Node>(), 0);
 	}
 	
+	/**
+	 * The nitty gritty implementation of finding the paths for each node. Pretty much
+	 * a recursive DFS that tracks it currentPath at every step. This implementation will
+	 * not continue to hop through cycles.
+	 * 
+	 * @param source
+	 * @param sharedPathsList
+	 * @param currentPath
+	 * @param count
+	 * @return A List of all the "Paths" taken from this node.
+	 */
+	public List<ArrayList<Node>> findPaths(Node source, List<ArrayList<Node>> sharedPathsList, Stack<Node> currentPath, int count) {
+
+		currentPath.push(source);
+		source.markAsVisiting();
+		
+		// Copy current path and add it to list of all paths
+		ArrayList<Node> path = new ArrayList<Node>(currentPath);
+		sharedPathsList.add(sharedPathsList.size(), path);
+		
+		if (++count >= 10) {
+			return sharedPathsList;
+		}
+		
+		for (Node neighbor : source.getNeighbors()) {
+			if (neighbor.isBeingVisited()) {
+				ArrayList<Node> temp = new ArrayList<Node>(currentPath);
+				temp.add(temp.size(), neighbor);
+				sharedPathsList.add(sharedPathsList.size(), temp);
+			} else {
+				findPaths(neighbor, sharedPathsList, currentPath, count);
+			}
+		}
+		
+		currentPath.pop();
+		source.markAsVisited();
+		return sharedPathsList;
+	}
+	
+	/**
+	 * Helper method to turn a Collection of "Paths" into a Collection of Routes
+	 * @param source
+	 * @param weights
+	 * @param prevNodes
+	 * @return
+	 */
 	private Map<Node, Route> makeRouteMap(Node source, Map<Node, Integer> weights,
 			                            Map<Node, Node> prevNodes) {
 		
@@ -243,6 +249,24 @@ public class Graph {
 		// We didn't find it
 		return null;
 		
+	}
+	
+	public Route from(Node source) {
+		Route route = new Route();
+		route.getPath().add(source);
+		route.setDistance(0);
+		route.setHops(0);
+		return route;
+	}
+	
+	public Node getNodeByName(String name) {
+		for (Node node : allNodes) {
+			if (name.equals(node.getLabel())) {
+				return node;
+			}
+		}
+		
+		return null;
 	}
 	
 }

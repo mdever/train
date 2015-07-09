@@ -49,6 +49,20 @@ public class Route {
 		return this;
 	}
 	
+	public Route to(Node dest) {
+		// Indicates that no such route exists
+		if (distance == -1) {
+			return this;
+		}
+		if (path.get(hops).getEdgeForNeighbor(dest) == null) {
+			distance = -1;
+			return this;
+		}
+		distance += path.get(hops).getEdgeForNeighbor(dest).getWeight();
+		path.add(dest);
+		hops++;
+		return this;
+	}
 	
 	
 }

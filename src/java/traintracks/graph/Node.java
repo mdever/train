@@ -8,8 +8,14 @@ public class Node {
 	private String label;
 	private List<Edge> edges;
 	
+	enum VisitState {
+		NOT_VISITED,
+		VISITING,
+		VISITED
+	}
+	
 	// For use in BFS/DFS
-	Boolean visited = Boolean.FALSE;
+	VisitState state = VisitState.NOT_VISITED;
 	
 	public Node(String label) {
 		this.label = label;
@@ -116,18 +122,6 @@ public class Node {
 		return null;
 	}
 	
-	public void markVisited() {
-		visited = Boolean.TRUE;
-	}
-	
-	public void markClean() {
-		visited = Boolean.FALSE;
-	}
-	
-	public Boolean hasBeenVisited() {
-		return visited;
-	}
-	
 	public Boolean hasUnvisitedNeighbors() {
 		for (Node neighbor : getNeighbors()) {
 			if (!neighbor.hasBeenVisited()) {
@@ -135,5 +129,29 @@ public class Node {
 			}
 		}
 		return Boolean.FALSE;
+	}
+	
+	public Boolean hasBeenVisited() {
+		return (state == VisitState.VISITED);
+	}
+	
+	public void markAsVisited() {
+		state = VisitState.VISITED;
+	}
+	
+	public void markAsNotVisited() {
+		state = VisitState.NOT_VISITED;
+	}
+	
+	public void markAsVisiting() {
+		state = VisitState.VISITING;
+	}
+	
+	public Boolean isBeingVisited() {
+		return state == VisitState.VISITING;
+	}
+	
+	public String toString() {
+		return this.label;
 	}
 }
