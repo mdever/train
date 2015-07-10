@@ -8,13 +8,13 @@ public class Edge {
 	
 	// Default weight: 1
 	public Edge(Node source, Node destination) {
-		this.source = source;
+		this.setSource(source);
 		this.destination = destination;
 		this.setWeight(1);
 	}
 	
 	public Edge(Node source, Node destination, Integer weight) {
-		this.source = source;
+		this.setSource(source);
 		source.addEdge(this);
 		this.destination = destination;
 		this.setWeight(weight);
@@ -30,5 +30,13 @@ public class Edge {
 
 	public void setWeight(Integer weight) {
 		this.weight = weight;
+	}
+
+	public Node getSource() {
+		return source;
+	}
+
+	public void setSource(Node source) {
+		this.source = source;
 	}
 }

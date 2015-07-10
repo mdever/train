@@ -19,6 +19,18 @@ public class Route {
 	public void setDistance(Integer distance) {
 		this.distance = distance;
 	}
+	
+	public Integer calculateDistance() {
+		Integer distance = 0;
+		for (int i = 0; i < path.size(); i++) {
+			if (i != path.size() - 1) {
+				distance += path.get(i).getEdgeForNeighbor(path.get(i + 1)).getWeight();
+			}
+		}
+		
+		this.distance = distance;
+		return distance;
+	}
 
 	public Integer getHops() {
 		return hops;

@@ -29,6 +29,7 @@ import java.util.Stack;
 public class Graph {
 
 	private List<Node> allNodes = new ArrayList<Node>();
+	private List<Edge> allEdges = new ArrayList<Edge>();
 	
 	// So that we don't do shortest paths calculation if we don't have to
 	private Map<Node, Map<Node, Route>> shortestRoutesCache = new HashMap<Node, Map<Node, Route>>();
@@ -52,7 +53,7 @@ public class Graph {
 			return this;
 		}
 		
-		new Edge(source, dest, weight); 
+		allEdges.add(new Edge(source, dest, weight)); 
 		
 		return this;
 	}
@@ -101,7 +102,9 @@ public class Graph {
 		// A*
 		while (!nodes.isEmpty()) {
 			Node node = findMinimum(nodes, weights);
-			
+			if (weights.get(node).equals(Integer.MAX_VALUE)) {
+				continue;
+			}
 			for (Node neighbor : node.getNeighbors()) {
 				Integer alternateWeight = weights.get(node) + node.getEdgeForNeighbor(neighbor).getWeight();
 				if (alternateWeight < weights.get(neighbor)) {
@@ -111,6 +114,17 @@ public class Graph {
 			}
 		}
 		
+		List<Node> unreachableNodes = new ArrayList<Node>();
+		
+		for (Map.Entry<Node, Integer> entry : weights.entrySet()) {
+			if (entry.getValue().equals(Integer.MAX_VALUE)) {
+				unreachableNodes.add(entry.getKey());
+			}
+		}
+		
+		for (Node unreachableNode : unreachableNodes) {
+			weights.remove(unreachableNode);
+		}
 		Map<Node, Route> routeMap = makeRouteMap(source, weights, prevNodes);
 		
 		// Cache result
@@ -269,4 +283,27 @@ public class Graph {
 		return null;
 	}
 	
+	public String toDotFormat() {
+		StringBuilder sb = new StringBuilder();
+		sb.append("\tdigraph {\n");
+		int i = 0;
+		for (Edge edge : allEdges) {
+			sb.append("\t\t");
+			sb.append(edge.getSource().getLabel());
+			sb.append(" -> ");
+			sb.append(edge.getDest().getLabel());
+			sb.append("[ranksep=");
+			sb.append(edge.getWeight());
+			sb.append(" label=");
+			sb.append(edge.getWeight());
+			sb.append("]");
+			if (i != allEdges.size() - 1) {
+				sb.append(",");
+			}
+			sb.append("\n");
+			i++;
+		}
+		sb.append("\t}");
+		return sb.toString();
+	}
 }

@@ -11,9 +11,11 @@ import java.io.UnsupportedEncodingException;
 import java.nio.charset.CharsetDecoder;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Stack;
 
 import traintracks.graph.Graph;
 import traintracks.graph.Node;
+import traintracks.graph.Route;
 import traintracks.graph.parser.GraphParser;
 
 /**
@@ -63,20 +65,56 @@ public class GraphUtils {
 		return readFromInputStream(new FileInputStream(inputFile));
 	}
 	
-	public static String printPaths(List<ArrayList<Node>> paths) {
+	public static Integer permutationsUnderThreshold(List<Route> routes, Integer threshold) {
+		int result = 0;
 		
-		StringBuilder sb = new StringBuilder();
+		List<List<Route>> routePermutations =  generateRotations(routes);
 		
-		for (List<Node> path : paths) {
-			sb.append("Path: ");
-			for (Node step : path) {
-				sb.append(step + " ");
+		
+		for (List<Route> routePermutation : routePermutations) {
+			result += permutationsUnderThreshold(new ArrayList<Route>(routePermutation), threshold, 0);
+		}
+		return result;
+	}
+	
+	// This should really be a generic function acting on a List of Objects, but I was tight on time.
+	private static List<List<Route>> generateRotations(List<Route> routes) {
+		
+		List<List<Route>> result = new ArrayList<List<Route>>();
+		result.add(new ArrayList<Route>(routes));
+		
+		for (int i = 0; i < routes.size() - 1; i++) {
+			Route temp = routes.get(0);
+			for (int j = 1; j < routes.size(); j++) {
+				routes.set(j - 1, routes.get(j));
 			}
-			sb.append("\n");
+			routes.set(routes.size() - 1, temp);
+			result.add(new ArrayList<Route>(routes));
+		}
+		return result;
+	}
+
+	// Nother recursive function damn these graphs
+	public static int permutationsUnderThreshold(List<Route> stateToPass, Integer threshold, int currentDistance) {
+		
+		if (stateToPass.isEmpty()) {
+			return 0;
 		}
 		
-		return sb.toString();
+		Route me = stateToPass.remove(0);
 		
+		if (me.getDistance() + currentDistance >= threshold) {
+			return 0;
+		}		
+		
+		int paths = (int) Math.floor((double) (threshold - currentDistance) / (double) me.getDistance());
+		currentDistance += me.getDistance();
+
+		for (Route route : stateToPass) {
+			paths += permutationsUnderThreshold(new ArrayList<Route>(stateToPass), threshold, currentDistance);
+		}
+		
+		return paths;
 	}
 	
 }
